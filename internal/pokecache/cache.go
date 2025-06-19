@@ -11,33 +11,33 @@ type cacheEntry struct {
 }
 
 type Cache struct {
-    entries  map[string]cacheEntry
-    mu       sync.Mutex
-	interval time.Duration
+    Entries  map[string]cacheEntry
+    Mu       sync.Mutex
+	Interval time.Duration
 }
 
 func NewCache(interval time.Duration) *Cache {
 	cache := Cache{
-		entries: make(map[string]cacheEntry),
-		interval: interval,
+		Entries: make(map[string]cacheEntry),
+		Interval: interval,
 	} 		
 	return &cache
 }
 
 func (c *Cache) Add(key string, val []byte) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.Mu.Lock()
+	defer c.Mu.Unlock()
 
-	c.entries[key] = cacheEntry{
+	c.Entries[key] = cacheEntry{
 		createdAt: time.Now(),
 		val: val,
 	}
 }
 
 func (c *Cache) Get(key string) ([]byte,bool) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	value,ok := c.entries[key]
+	c.Mu.Lock()
+	defer c.Mu.Unlock()
+	value,ok := c.Entries[key]
 	if !ok {
 		return []byte{},false
 	}
@@ -45,18 +45,18 @@ func (c *Cache) Get(key string) ([]byte,bool) {
 }
 
 func (c *Cache) readLoop() {
-	ticker := time.NewTicker(c.interval)
+	ticker := time.NewTicker(c.Interval)
 	defer ticker.Stop()
 
 	for {
 		<-ticker.C
-		c.mu.Lock()
-		for k,entry := range c.entries {
-			if time.Since(entry.createdAt) > c.interval {
-				delete(c.entries,k)
+		c.Mu.Lock()
+		for k,entry := range c.Entries {
+			if time.Since(entry.createdAt) > c.Interval {
+				delete(c.Entries,k)
 			}
 		}
-		c.mu.Unlock()
+		c.Mu.Unlock()
 	}
 } 
 
