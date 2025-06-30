@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/alkeshnikalje/go-pokedox/internal/pokeapi"
+	"github.com/alkeshnikalje/go-pokedox/internal/pokecache"
 )
 
 func cleanInput(input string) []string {
@@ -24,17 +26,17 @@ type Config struct {
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(config *Config) error
+	callback    func(config *Config,c *pokecache.Cache) error
 }
 
-func exitCommand(config *Config) error {
+func exitCommand(config *Config,c *pokecache.Cache) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	return errors.New("exit")
 }
 
 
-func mapCommand(config *Config) error {
-	locationResponse,err := pokeapi.GetLocationAreas(config.Next)	
+func mapCommand(config *Config,c *pokecache.Cache) error {
+	locationResponse,err := pokeapi.GetLocationAreas(config.Next,c)	
 	if err != nil {
 		return err
 	}
@@ -52,13 +54,13 @@ func mapCommand(config *Config) error {
 	return nil
 }
 
-func mapbCommand(config *Config) error {
+func mapbCommand(config *Config,c *pokecache.Cache) error {
 	if config.Previous == "" {
 		fmt.Println("you're on the first page")
 		return nil
 	}
 
-	locationResponse, err := pokeapi.GetLocationAreas(config.Previous)
+	locationResponse, err := pokeapi.GetLocationAreas(config.Previous,c)
 
 	if err != nil {
 		return err
@@ -109,30 +111,33 @@ func helpCommand() {
 func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 	config := Config{Next: "https://pokeapi.co/api/v2/location-area"}
+	cache := pokecache.NewCache(10*time.Second)
+	go cache.ReadLoop() 
 	for  {
 		fmt.Print("Pokedex > ")
 		scanner.Scan()
 		userInput := scanner.Text()
 		cleanedInput := cleanInput(userInput)
 		firstElement := cleanedInput[0]
-		if firstElement == "help" {
-			helpCommand()
-		} 
 		command, ok := cliCommands[firstElement]
 		if !ok && firstElement != "help"{
 			fmt.Println("unknown command")
+			continue
 		}
+
+		if firstElement == "help" {
+			helpCommand()
+			continue
+		}
+
 		if command.name == "exit" {
-			err := command.callback(&config)
+			err := command.callback(&config,cache)
 			fmt.Println(err)
 			os.Exit(0)
 		}
-		if command.name == "map" {
-			command.callback(&config)
-		}
-		if command.name == "mapb" {
-			command.callback(&config)
-		}
+
+		command.callback(&config,cache)
+
 	}	
 }
 

@@ -11,10 +11,10 @@ import (
 func GetLocationAreas(url string,c *pokecache.Cache) (*LocationAreaResponse, error) {
 	var locationArea LocationAreaResponse
 	
-	entry, ok := c.Entries[url]
+	val,ok := c.Get(url) 
 	
 	if ok {
-		if err := json.Unmarshal(entry.val, &locationArea); err != nil {
+		if err := json.Unmarshal(val, &locationArea); err != nil {
 			return nil, err
 		}			
 		return &locationArea,nil
@@ -31,10 +31,27 @@ func GetLocationAreas(url string,c *pokecache.Cache) (*LocationAreaResponse, err
 		return nil, err
 	}
 
+	c.Add(url,data)
+
 	if err := json.Unmarshal(data, &locationArea); err != nil {
 		return nil, err
 	}
 
 	return &locationArea, nil
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
