@@ -2,6 +2,7 @@ package pokeapi
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -41,34 +42,38 @@ func GetLocationAreas(url string,c *pokecache.Cache) (*LocationAreaResponse, err
 }
 
 
-func GetArea(name string, c *pokecache.Cache) (*Area, error) {
+func GetArea(name string, c *pokecache.Cache) (*Area, int, error) {
 	areaUrl := "https://pokeapi.co/api/v2/location-area/" + name
 	var area Area
 	val,ok := c.Get(name)
 	if ok {
 		if err := json.Unmarshal(val,&area); err != nil {
-			return nil, err
+			return nil,0, err
 		}
-		return &area,nil
+		return &area,0,nil
 	}
 	resp, err := http.Get(areaUrl)
 
 	if err != nil {
-		return nil, err
+		return nil, resp.StatusCode, err
 	}
 
 	defer resp.Body.Close()
-
+	
+	if resp.StatusCode == 404 {
+		return nil, resp.StatusCode,fmt.Errorf("received 404")
+	}
+	
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil,err
+		return nil,0, err
 	}
 	c.Add(name,data)
 
 	if err := json.Unmarshal(data,&area); err != nil {
-		return nil,err
+		return nil,0,err
 	}
-	return &area,nil	
+	return &area,resp.StatusCode,nil	
 }
 
 

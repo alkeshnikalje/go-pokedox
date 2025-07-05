@@ -26,16 +26,16 @@ type Config struct {
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(config *Config,c *pokecache.Cache) error
+	callback    func(config *Config,c *pokecache.Cache, areaName string) error
 }
 
-func exitCommand(config *Config,c *pokecache.Cache) error {
+func exitCommand(config *Config,c *pokecache.Cache, areaName string) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	return errors.New("exit")
 }
 
 
-func mapCommand(config *Config,c *pokecache.Cache) error {
+func mapCommand(config *Config,c *pokecache.Cache, areaName string) error {
 	locationResponse,err := pokeapi.GetLocationAreas(config.Next,c)	
 	if err != nil {
 		return err
@@ -54,7 +54,7 @@ func mapCommand(config *Config,c *pokecache.Cache) error {
 	return nil
 }
 
-func mapbCommand(config *Config,c *pokecache.Cache) error {
+func mapbCommand(config *Config,c *pokecache.Cache, areaName string) error {
 	if config.Previous == "" {
 		fmt.Println("you're on the first page")
 		return nil
@@ -77,6 +77,25 @@ func mapbCommand(config *Config,c *pokecache.Cache) error {
 	return nil
 }
 
+func exploreCommand (config *Config,c *pokecache.Cache, areaName string) error {
+
+	areResponse,statusCode, err := pokeapi.GetArea(areaName,c)
+
+	if err != nil {
+		if statusCode == 404 {
+			fmt.Println("Area not found. Please enter the valid area name")
+			return err
+		}
+		return err
+	}
+	fmt.Println("Exploring" + " " + areaName + "...")
+	fmt.Println("Found Pokemon:")
+	for _,encounter := range areResponse.PokemonEncounters {
+		fmt.Println(encounter.Pokemon.Name)
+	}
+	return nil
+}
+
 var cliCommands = map[string]cliCommand{
     "exit": {
         name:        "exit",
@@ -92,6 +111,11 @@ var cliCommands = map[string]cliCommand{
 		name: 		 "mapb",
 		description: "It's similar to the map command, however, instead of displaying the next 20 locations, it displays the previous 20 locations. It's a way to go back",
 		callback: 	 mapbCommand,
+	},
+	"explore": {
+		name:        "explore",
+		description: "this command will help you explore the pokemons in a area you specify, you need to type an area's name after the explore command. For example- explore somearea.",
+		callback: 	 exploreCommand,
 	},
 }
 
@@ -119,6 +143,10 @@ func main() {
 		userInput := scanner.Text()
 		cleanedInput := cleanInput(userInput)
 		firstElement := cleanedInput[0]
+		var secondElement = ""
+		if len(cleanedInput) > 1 {
+			secondElement = cleanedInput[1]
+		}
 		command, ok := cliCommands[firstElement]
 		if !ok && firstElement != "help"{
 			fmt.Println("unknown command")
@@ -131,12 +159,12 @@ func main() {
 		}
 
 		if command.name == "exit" {
-			err := command.callback(&config,cache)
+			err := command.callback(&config,cache,secondElement)
 			fmt.Println(err)
 			os.Exit(0)
 		}
 
-		command.callback(&config,cache)
+		command.callback(&config,cache,secondElement)
 
 	}	
 }
