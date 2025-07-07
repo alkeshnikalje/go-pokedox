@@ -29,3 +29,9 @@ type PokemonResponse struct {
 	Url	 string `json:"url"`
 }
 
+// struct to unmarshal pokemon information (baseExperience)
+
+type PokemonBaseExp struct {
+	BaseExp int `json:"base_experience"`
+}
+

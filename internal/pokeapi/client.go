@@ -76,6 +76,55 @@ func GetArea(name string, c *pokecache.Cache) (*Area, int, error) {
 	return &area,resp.StatusCode,nil	
 }
 
+func GetPokemonBaseExp (name string, c *pokecache.Cache) (*PokemonBaseExp,int, error) {
+	pokemonInfoUrl := "https://pokeapi.co/api/v2/pokemon/"	+ name
+	var pokemonInfo PokemonBaseExp
+	val,ok := c.Get(name)
+	if ok {
+		if err := json.Unmarshal(val,&pokemonInfo); err != nil {
+			return nil,0, err
+		}
+		return &pokemonInfo,0,nil
+	}
+
+	resp,err := http.Get(pokemonInfoUrl)
+	if err != nil {
+		return nil,0,err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == 404 {
+		return nil, resp.StatusCode,fmt.Errorf("received 404")
+	}
+	
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil,0, err
+	}
+	c.Add(name,data)	
+
+	if err := json.Unmarshal(data,&pokemonInfo); err != nil {
+		return nil,0,err
+	}
+	return &pokemonInfo,resp.StatusCode,nil
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

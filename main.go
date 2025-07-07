@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"math/rand"
 
 	"github.com/alkeshnikalje/go-pokedox/internal/pokeapi"
 	"github.com/alkeshnikalje/go-pokedox/internal/pokecache"
@@ -26,16 +27,16 @@ type Config struct {
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(config *Config,c *pokecache.Cache, areaName string) error
+	callback    func(config *Config,c *pokecache.Cache, name string) error
 }
 
-func exitCommand(config *Config,c *pokecache.Cache, areaName string) error {
+func exitCommand(config *Config,c *pokecache.Cache, name string) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	return errors.New("exit")
 }
 
 
-func mapCommand(config *Config,c *pokecache.Cache, areaName string) error {
+func mapCommand(config *Config,c *pokecache.Cache, name string) error {
 	locationResponse,err := pokeapi.GetLocationAreas(config.Next,c)	
 	if err != nil {
 		return err
@@ -54,7 +55,7 @@ func mapCommand(config *Config,c *pokecache.Cache, areaName string) error {
 	return nil
 }
 
-func mapbCommand(config *Config,c *pokecache.Cache, areaName string) error {
+func mapbCommand(config *Config,c *pokecache.Cache, name string) error {
 	if config.Previous == "" {
 		fmt.Println("you're on the first page")
 		return nil
@@ -96,6 +97,31 @@ func exploreCommand (config *Config,c *pokecache.Cache, areaName string) error {
 	return nil
 }
 
+func catchCommand (config *Config,c *pokecache.Cache, pokemonName string) error {
+
+	pokemonInfoResponse,statusCode, err := pokeapi.GetPokemonBaseExp(pokemonName,c)
+
+	if err != nil {
+		if statusCode == 404 {
+			fmt.Printf("Pokemon: %s not found.",pokemonName)
+			return err
+		}
+		return err
+	}
+	fmt.Println("Throwing a Pokeball at",pokemonName + "...")
+	
+	randomRoll := rand.Intn(100)
+	catchThreshold := 100 - (pokemonInfoResponse.BaseExp/3)
+	
+	if randomRoll < catchThreshold {
+		fmt.Println(pokemonName,"was caught!")
+	}else {
+		fmt.Println(pokemonName,"was escaped!")
+	} 
+
+	return nil
+}
+
 var cliCommands = map[string]cliCommand{
     "exit": {
         name:        "exit",
@@ -116,6 +142,11 @@ var cliCommands = map[string]cliCommand{
 		name:        "explore",
 		description: "this command will help you explore the pokemons in a area you specify, you need to type an area's name after the explore command. For example- explore somearea.",
 		callback: 	 exploreCommand,
+	},
+	"catch": {
+		name:		 "catch",
+		description: "this command lets you catch the pokemon (you may not be able to catch in the first go though haha)",
+		callback: 	 catchCommand,
 	},
 }
 
