@@ -76,9 +76,9 @@ func GetArea(name string, c *pokecache.Cache) (*Area, int, error) {
 	return &area,resp.StatusCode,nil	
 }
 
-func GetPokemonBaseExp (name string, c *pokecache.Cache) (*PokemonBaseExp,int, error) {
+func GetPokemon (name string, c *pokecache.Cache) (*Pokemon,int, error) {
 	pokemonInfoUrl := "https://pokeapi.co/api/v2/pokemon/"	+ name
-	var pokemonInfo PokemonBaseExp
+	var pokemonInfo Pokemon
 	val,ok := c.Get(name)
 	if ok {
 		if err := json.Unmarshal(val,&pokemonInfo); err != nil {

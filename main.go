@@ -27,16 +27,16 @@ type Config struct {
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(config *Config,c *pokecache.Cache, name string) error
+	callback    func(config *Config,c *pokecache.Cache, name string, pokemonMap map[string]pokeapi.Pokemon) error
 }
 
-func exitCommand(config *Config,c *pokecache.Cache, name string) error {
+func exitCommand(config *Config,c *pokecache.Cache, name string,pokemonMap map[string]pokeapi.Pokemon) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	return errors.New("exit")
 }
 
 
-func mapCommand(config *Config,c *pokecache.Cache, name string) error {
+func mapCommand(config *Config,c *pokecache.Cache, name string,pokemonMap map[string]pokeapi.Pokemon) error {
 	locationResponse,err := pokeapi.GetLocationAreas(config.Next,c)	
 	if err != nil {
 		return err
@@ -55,7 +55,7 @@ func mapCommand(config *Config,c *pokecache.Cache, name string) error {
 	return nil
 }
 
-func mapbCommand(config *Config,c *pokecache.Cache, name string) error {
+func mapbCommand(config *Config,c *pokecache.Cache, name string,pokemonMap map[string]pokeapi.Pokemon) error {
 	if config.Previous == "" {
 		fmt.Println("you're on the first page")
 		return nil
@@ -78,7 +78,7 @@ func mapbCommand(config *Config,c *pokecache.Cache, name string) error {
 	return nil
 }
 
-func exploreCommand (config *Config,c *pokecache.Cache, areaName string) error {
+func exploreCommand (config *Config,c *pokecache.Cache, areaName string,pokemonMap map[string]pokeapi.Pokemon) error {
 
 	areResponse,statusCode, err := pokeapi.GetArea(areaName,c)
 
@@ -97,9 +97,15 @@ func exploreCommand (config *Config,c *pokecache.Cache, areaName string) error {
 	return nil
 }
 
-func catchCommand (config *Config,c *pokecache.Cache, pokemonName string) error {
+func catchCommand (config *Config,c *pokecache.Cache, pokemonName string,pokemonMap map[string]pokeapi.Pokemon) error {
+	
+	pokemon, ok := pokemonMap[pokemonName]
+	if ok {
+		fmt.Println(pokemon.Name,"was already caught")
+		return nil
+	}
 
-	pokemonInfoResponse,statusCode, err := pokeapi.GetPokemonBaseExp(pokemonName,c)
+	pokemonInfoResponse,statusCode, err := pokeapi.GetPokemon(pokemonName,c)
 
 	if err != nil {
 		if statusCode == 404 {
@@ -111,9 +117,9 @@ func catchCommand (config *Config,c *pokecache.Cache, pokemonName string) error 
 	fmt.Println("Throwing a Pokeball at",pokemonName + "...")
 	
 	randomRoll := rand.Intn(100)
-	catchThreshold := 100 - (pokemonInfoResponse.BaseExp/3)
-	
+	catchThreshold := 100 - (pokemonInfoResponse.BaseExp/2)	
 	if randomRoll < catchThreshold {
+		pokemonMap[pokemonName] = *pokemonInfoResponse
 		fmt.Println(pokemonName,"was caught!")
 	}else {
 		fmt.Println(pokemonName,"was escaped!")
@@ -167,6 +173,7 @@ func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 	config := Config{Next: "https://pokeapi.co/api/v2/location-area"}
 	cache := pokecache.NewCache(10*time.Second)
+	pokemonMap := map[string]pokeapi.Pokemon{}
 	go cache.ReadLoop() 
 	for  {
 		fmt.Print("Pokedex > ")
@@ -190,12 +197,12 @@ func main() {
 		}
 
 		if command.name == "exit" {
-			err := command.callback(&config,cache,secondElement)
+			err := command.callback(&config,cache,secondElement,pokemonMap)
 			fmt.Println(err)
 			os.Exit(0)
 		}
 
-		command.callback(&config,cache,secondElement)
+		command.callback(&config,cache,secondElement,pokemonMap)
 
 	}	
 }

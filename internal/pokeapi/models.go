@@ -29,9 +29,67 @@ type PokemonResponse struct {
 	Url	 string `json:"url"`
 }
 
-// struct to unmarshal pokemon information (baseExperience)
+// structs to unmarshal pokemon information. 
 
-type PokemonBaseExp struct {
-	BaseExp int `json:"base_experience"`
+type Pokemon struct {
+	BaseExp int 			`json:"base_experience"`
+	Weight 	int 			`json:"weight"`
+	Name	string			`json:"name"`	
+	Height 	int 			`json:"height"`
+	Stats   []StatResponse	`json:"stats"`
+	Types   []TypeResponse	`json:"types"`
+
 }
+
+type StatResponse struct {
+	BaseStart int		`json:"base_stat"`
+	Stat 	  StatName	`json:"stat"`	
+
+}
+
+type StatName struct {
+	Name string		`json:"name"`		
+}
+
+type TypeResponse struct {
+	Type TypeName 	`json:"type"`
+}
+
+type TypeName struct {
+	Name string		`json:"name"`
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
