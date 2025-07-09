@@ -128,6 +128,29 @@ func catchCommand (config *Config,c *pokecache.Cache, pokemonName string,pokemon
 	return nil
 }
 
+func inspectCommand (config *Config,c *pokecache.Cache, pokemonName string,pokemonMap map[string]pokeapi.Pokemon) error {
+	pokemon, ok := pokemonMap[pokemonName]	
+	if !ok {
+		fmt.Println("you have not caught that pokemon")
+		return nil
+	}
+	fmt.Println("Name:",pokemon.Name)
+	fmt.Println("Height:",pokemon.Height)
+	fmt.Println("Weight:",pokemon.Weight)
+	fmt.Println("Stats:")
+	for _,stat := range pokemon.Stats {
+		fmt.Println("-",stat.Stat.Name,":",stat.BaseStart)
+	}
+
+	fmt.Println("Types:")
+	for _,typ := range pokemon.Types {
+		fmt.Println("-",typ.Type.Name)
+	} 
+	
+	return nil
+
+}
+
 var cliCommands = map[string]cliCommand{
     "exit": {
         name:        "exit",
@@ -153,6 +176,11 @@ var cliCommands = map[string]cliCommand{
 		name:		 "catch",
 		description: "this command lets you catch the pokemon (you may not be able to catch in the first go though haha)",
 		callback: 	 catchCommand,
+	},
+	"inspect": {
+		name: 		 "inspect",
+		description: "It takes the name of a Pokemon and prints the name, height, weight, stats and type(s) of the Pokemon.",
+		callback:	 inspectCommand,
 	},
 }
 
@@ -182,17 +210,27 @@ func main() {
 		cleanedInput := cleanInput(userInput)
 		firstElement := cleanedInput[0]
 		var secondElement = ""
+
 		if len(cleanedInput) > 1 {
 			secondElement = cleanedInput[1]
-		}
-		command, ok := cliCommands[firstElement]
-		if !ok && firstElement != "help"{
-			fmt.Println("unknown command")
-			continue
 		}
 
 		if firstElement == "help" {
 			helpCommand()
+			continue
+		}
+
+		if firstElement == "pokedex" {
+			fmt.Println("Your Pokedex:")
+			for key,_ := range pokemonMap {
+				fmt.Println("-",key)
+			}
+			continue
+		}
+
+		command, ok := cliCommands[firstElement]
+		if !ok && firstElement != "help"{
+			fmt.Println("unknown command")
 			continue
 		}
 
